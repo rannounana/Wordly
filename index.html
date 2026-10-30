@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#635bff">
+  <meta name="description" content="تطبيق بطاقات ومراجعة مفردات إنجليزية">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <title>Wordly — بطاقات المفردات</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brandmark">W</span><div><b>Wordly</b><small>تعلّم كلماتك بطريقتك</small></div></div>
+    <button id="installBtn" class="ghost hidden">تثبيت التطبيق</button>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div><p class="eyebrow">مساحة تعلمك الشخصية</p><h1>كل كلماتك، في مكان واحد.</h1>
+      <p class="sub">أضف عشرات الكلمات دفعة واحدة، ثم تعلّمها واختبر نفسك.</p></div>
+      <div class="hero-icon">✦</div>
+    </section>
+
+    <nav class="tabs" aria-label="التنقل">
+      <button class="tab active" data-page="home">الرئيسية</button>
+      <button class="tab" data-page="cards">البطاقات</button>
+      <button class="tab" data-page="study">مراجعة البطاقات</button>
+      <button class="tab" data-page="quiz">اختبر نفسك</button>
+    </nav>
+
+    <section id="homePage" class="page">
+      <div class="stats">
+        <article class="stat"><span>كل البطاقات</span><strong id="totalCount">0</strong></article>
+        <article class="stat"><span>أعرفها</span><strong id="knownCount">0</strong></article>
+        <article class="stat"><span>تحتاج مراجعة</span><strong id="reviewCount">0</strong></article>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><p class="eyebrow">إضافة جماعية</p><h2>أنشئ بطاقات كثيرة مرة واحدة</h2></div><span class="pill">سريع</span></div>
+        <p class="hint">اكتب كل كلمة في سطر. يمكنك إضافة المعنى بعد شرطة أو فاصلة أو علامة تبويب.</p>
+        <textarea id="bulkInput" rows="7" placeholder="Reluctant — متردد&#10;Enhance — يعزز&#10;Overcome — يتغلب على&#10;Reliable — موثوق"></textarea>
+        <div class="row wraprow">
+          <input id="deckName" type="text" placeholder="اسم المجموعة (مثلاً: Vocabulary A)" value="مفرداتي">
+          <button id="addBulk" class="primary">معاينة ثم إنشاء البطاقات</button>
+        </div>
+        <div class="file-row">
+          <label class="file-label" for="fileInput">＋ استيراد TXT / CSV / Excel / PDF</label>
+          <input id="fileInput" type="file" accept=".txt,.csv,.tsv,.xlsx,.xls,.pdf">
+          <span id="fileStatus" class="muted"></span>
+        </div>
+        <p class="tiny">يمكنك لصق مئات الكلمات. راجع المعاينة قبل الحفظ. فحص صحة الترجمة اللغوي يحتاج اتصالاً بخدمة ترجمة خارجية؛ حالياً يمكنك تعليم المعنى المشكوك فيه وتصحيحه مع حفظ النسخة السابقة.</p>
+      </div>
+
+      <div class="panel soft">
+        <h2>كيف تكتب القائمة؟</h2>
+        <div class="examples">
+          <div><b>كلمة فقط</b><code>Reluctant</code></div>
+          <div><b>كلمة ومعنى</b><code>Reluctant — متردد</code></div>
+          <div><b>بفاصل جدولي</b><code>Enhance    يعزز</code></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="cardsPage" class="page hidden">
+      <div class="section-title"><div><p class="eyebrow">مجموعاتك</p><h2>بطاقات المفردات</h2></div><span id="cardsTotal" class="pill">0 بطاقة</span></div>
+      <div class="filters">
+        <input id="searchCards" placeholder="ابحث عن كلمة أو معنى…">
+        <select id="deckFilter"><option value="all">كل المجموعات</option></select>
+        <select id="reviewFilter"><option value="all">كل الترجمات</option><option value="flagged">تحتاج تحقق</option></select>
+      </div>
+      <div id="cardsList" class="card-list"></div>
+      <p id="emptyCards" class="empty">لا توجد بطاقات بعد. أضف قائمة كلمات من الصفحة الرئيسية.</p>
+    </section>
+
+    <section id="studyPage" class="page hidden">
+      <div class="section-title"><div><p class="eyebrow">راجع وتذكّر</p><h2>مراجعة البطاقات</h2></div><span id="studyCount" class="pill">0 بطاقة</span></div>
+      <div class="panel study-panel">
+        <div class="quiz-top"><span id="studyProgress">0 / 0</span><select id="studyDeck"><option value="all">كل المجموعات</option></select></div>
+        <div class="progress"><i id="studyBar"></i></div>
+        <button id="flashcard" class="flashcard" type="button">
+          <span class="flashcard-label">الكلمة الإنجليزية</span><strong id="flashFront">أضف كلماتك للبدء</strong>
+          <span id="flashHint" class="flashcard-hint">اضغط على البطاقة لإظهار الترجمة</span>
+          <span id="flashBack" class="flash-back hidden"></span>
+        </button>
+        <div class="study-actions"><button id="studyPrev" class="ghost">السابق</button><button id="studyFlip" class="primary">إظهار الترجمة</button><button id="studyNext" class="ghost">التالي</button></div>
+        <div class="study-actions second-row"><button id="studyUnknown" class="mini">أحتاج إلى مراجعتها</button><button id="studyKnown" class="mini">✓ أعرفها</button></div>
+      </div>
+    </section>
+    <section id="quizPage" class="page hidden">
+      <div class="section-title"><div><p class="eyebrow">تدرّب واسترجع</p><h2>اختبر مفرداتك</h2></div></div>
+      <div class="panel quiz-panel">
+        <div class="quiz-settings">
+          <label>اتجاه الاختبار<select id="quizDirection">
+            <option value="en-ar">إنجليزي إلى عربي</option><option value="ar-en">عربي إلى إنجليزي</option><option value="mixed">اتجاه عشوائي</option>
+          </select></label>
+          <label>المجموعة<select id="quizDeckFilter"><option value="all">كل المجموعات</option></select></label>
+        </div>
+        <div class="quiz-top"><span id="quizProgress">0 / 0</span><span id="quizDeck" class="pill">كل المجموعات</span></div>
+        <div class="progress"><i id="progressBar"></i></div>
+        <div id="quizArea">
+          <p class="muted center">اختبر نفسك باستخدام البطاقات التي أضفتها.</p>
+          <button id="startQuiz" class="primary wide">ابدأ الاختبار</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Wordly · نسخة أولية تعمل على هاتفك</footer>
+
+  <dialog id="editDialog">
+    <form method="dialog" id="editForm">
+      <div class="dialog-head"><h2>تعديل البطاقة</h2><button class="icon-btn" value="cancel">×</button></div>
+      <input id="editWord" placeholder="الكلمة" required>
+      <input id="editMeaning" placeholder="المعنى أو الترجمة">
+      <p id="translationHistory" class="tiny"></p>
+      <input id="editExample" placeholder="مثال (اختياري)">
+      <div class="row"><button class="primary" id="saveEdit" value="default">حفظ</button><button class="ghost" value="cancel">إلغاء</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="importDialog">
+    <form method="dialog">
+      <div class="dialog-head"><h2>معاينة الاستيراد</h2><button class="icon-btn" value="cancel">×</button></div>
+      <p id="importSummary" class="hint"></p><div id="importPreview" class="import-preview"></div>
+      <div class="row"><button class="primary" id="confirmImport" value="default">حفظ البطاقات</button><button class="ghost" value="cancel">إلغاء</button></div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
