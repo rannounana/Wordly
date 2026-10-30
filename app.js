@@ -146,11 +146,15 @@ function auditCandidates(){const scope=$("auditScope").value;return cards.filter
 function updateAuditBatches(){const total=Math.max(1,Math.ceil(auditCandidates().length/30)),old=Number($("auditBatch").value)||1;$("auditBatch").innerHTML=Array.from({length:total},(_,i)=>`<option value="${i+1}">الدفعة ${i+1}</option>`).join("");$("auditBatch").value=String(Math.min(old,total));}
 function renderAudit(){if(!$("auditList"))return;const unchecked=cards.filter(c=>c.meaning&&!c.translationVerified&&!c.translationFlag).length,flagged=cards.filter(c=>c.meaning&&c.translationFlag&&!c.translationVerified).length,verified=cards.filter(c=>c.translationVerified).length;$("uncheckedCount").textContent=unchecked;$("flaggedCount").textContent=flagged;$("verifiedCount").textContent=verified;$("auditCount").textContent=`${unchecked+flagged} غير مدققة`;updateAuditBatches();const items=auditCandidates();$("auditList").innerHTML=items.slice(0,60).map(c=>`<article class="audit-item"><div class="audit-state ${c.translationVerified?'verified':c.translationFlag?'flagged':'unchecked'}">${c.translationVerified?'✓ تم التحقق':c.translationFlag?'⚑ تحتاج مراجعة':'لم تُدقّق بعد'}</div><div class="audit-word">${escapeHtml(c.word)}</div><div class="audit-meaning">${escapeHtml(c.meaning)}</div><div class="audit-actions"><button class="mini" data-verify="${c.id}">${c.translationVerified?'إلغاء التحقق':'تم التحقق'}</button><button class="mini" data-flag="${c.id}">${c.translationFlag?'إزالة علامة الشك':'ترجمة مشكوك فيها'}</button><button class="mini" data-edit="${c.id}">تعديل البطاقة</button></div></article>`).join("");$("auditEmpty").classList.toggle("hidden",items.length>0);}
 function makeAuditPrompt(){const items=auditCandidates(),batch=(Number($("auditBatch").value)||1)-1,part=items.slice(batch*30,(batch+1)*30);if(!part.length){$("auditPrompt").value="لا توجد كلمات في هذه الدفعة.";return;}const lines=part.map((c,i)=>`${i+1}. ${c.word} — ${c.meaning}`).join("\n");$("auditPrompt").value=`أريد منك تدقيق الترجمات الإنجليزية إلى العربية التالية بدقة. لكل كلمة: تحقق من أن المعاني العربية صحيحة وطبيعية، وأنها تغطي المعنى الشائع المقصود. لا تعتبر اختلاف الصياغة خطأ إذا كان المعنى صحيحاً. احتفظ بكل المعاني الصحيحة ولا تحذف المرادفات الصحيحة. إذا وجدت خطأ أو نقصاً، اشرح السبب باختصار واقترح التصحيح. إذا كانت الترجمة صحيحة فاكتب «صحيحة». انتبه إلى العبارات متعددة الكلمات وإلى اختلاف المعنى حسب السياق. لا تخمّن عند غياب السياق؛ اذكر ذلك. أعد النتائج مرقمة وبنفس الترتيب، مع فصل واضح بين الترجمة الأصلية والتصحيح المقترح.\n\nالقائمة:\n${lines}`;}
-$("auditScope").addEventListener("change",()=>{updateAuditBatches();$("auditPrompt").value="";renderAudit();});
-$("auditBatch").addEventListener("change",makeAuditPrompt);
-$("makeAuditPrompt").addEventListener("click",makeAuditPrompt);
-$("copyAuditPrompt").addEventListener("click",async()=>{if(!$("auditPrompt").value)makeAuditPrompt();try{await navigator.clipboard.writeText($("auditPrompt").value);alert("تم نسخ طلب التدقيق. الصقه في ChatGPT لمراجعة هذه الدفعة.");}catch(e){$("auditPrompt").select();alert("حدد النص وانسخه يدوياً.");}});
-$("auditList").addEventListener("click",e=>{
+function addAuditListener(id,event,handler){
+  const el=$(id);
+  if(el)el.addEventListener(event,handler);
+}
+addAuditListener("auditScope","change",()=>{updateAuditBatches();$("auditPrompt").value="";renderAudit();});
+addAuditListener("auditBatch","change",makeAuditPrompt);
+addAuditListener("makeAuditPrompt","click",makeAuditPrompt);
+addAuditListener("copyAuditPrompt","click",async()=>{if(!$("auditPrompt").value)makeAuditPrompt();try{await navigator.clipboard.writeText($("auditPrompt").value);alert("تم نسخ طلب التدقيق. الصقه في ChatGPT لمراجعة هذه الدفعة.");}catch(e){$("auditPrompt").select();alert("حدد النص وانسخه يدوياً.");}});
+addAuditListener("auditList","click",e=>{
   const verify=e.target.dataset.verify,flag=e.target.dataset.flag,edit=e.target.dataset.edit;
   if(verify||flag){
     const c=cards.find(x=>x.id===(verify||flag));if(!c)return;
