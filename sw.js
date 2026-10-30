@@ -1,10 +1,52 @@
-const CACHE="wordly-shell-v3";
-const ASSETS=["./","./index.html","./style.css","./app.js","./manifest.json"];
-self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
-self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
-self.addEventListener("fetch",e=>{
-  if(e.request.method!=="GET")return;
-  e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request).then(res=>{
-    const copy=res.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return res;
-  }).catch(()=>caches.match("./index.html"))));
+const CACHE = "wordly-shell-v4";
+const ASSETS = ["./", "./index.html", "./style.css", "./app.js", "./manifest.json"];
+
+self.addEventListener("install", event => {
+  event.waitUntil(
+    caches.open(CACHE)
+      .then(cache => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter(key => key !== CACHE).map(key => caches.delete(key))
+    );
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener("fetch", event => {
+  if (event.request.method !== "GET") return;
+
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+
+    try {
+      const response = await fetch(event.request, { cache: "no-store" });
+
+      if (response && response.ok) {
+        await cache.put(event.request, response.clone());
+      }
+
+      return response;
+    } catch (error) {
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+
+      if (event.request.mode === "navigate") {
+        const fallbackUrl = new URL("./index.html", self.registration.scope).href;
+        const fallback = await cache.match(fallbackUrl);
+        if (fallback) return fallback;
+      }
+
+      return Response.error();
+    }
+  })());
 });
